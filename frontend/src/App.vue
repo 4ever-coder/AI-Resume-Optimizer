@@ -37,6 +37,49 @@
         <pre>{{ resume.parsedText }}</pre>
       </section>
 
+      <section v-if="resume" class="panel analysis-panel">
+        <div class="analysis-form">
+          <h2>生成报告</h2>
+          <label>
+            <span>目标岗位</span>
+            <input v-model="position" type="text" placeholder="例如：Java 后端工程师" />
+          </label>
+          <label>
+            <span>岗位 JD</span>
+            <textarea v-model="jobDescription" placeholder="粘贴目标岗位 JD，可选"></textarea>
+          </label>
+          <button :disabled="analyzing" @click="submitAnalysis">{{ analyzing ? '分析中...' : '开始分析' }}</button>
+        </div>
+
+        <article v-if="analysis" class="report">
+          <div class="scoreboard">
+            <div>
+              <p class="eyebrow">报告</p>
+              <h2>{{ analysis.report.position }}</h2>
+              <p>{{ analysis.report.overallComment }}</p>
+            </div>
+            <strong>{{ analysis.report.summaryScore }}</strong>
+            <span>{{ '★'.repeat(analysis.report.starLevel) }}{{ '☆'.repeat(5 - analysis.report.starLevel) }}</span>
+          </div>
+
+          <div class="dimension-grid">
+            <div v-for="dimension in analysis.report.dimensions" :key="dimension.key" class="dimension">
+              <div>
+                <strong>{{ dimension.label }}</strong>
+                <span>{{ dimension.score }}</span>
+              </div>
+              <p>{{ dimension.comment }}</p>
+            </div>
+          </div>
+
+          <div class="impressions">
+            <span v-for="impression in analysis.report.impressions" :key="impression.label">
+              {{ impression.label }}：{{ impression.description }}
+            </span>
+          </div>
+        </article>
+      </section>
+
       <section v-if="view === 'history'" class="panel history-panel">
         <div class="history-list">
           <div class="history-head">
@@ -108,21 +151,27 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { createAnalysis } from './api/analyses'
 import { getResume, listResumes, uploadResume } from './api/resumes'
 import { clearModelSettings, loadModelSettings, saveModelSettings } from './storage/modelSettings'
 import type { ModelSettings } from './types/modelSettings'
 import type { ResumeDocument } from './types/resume'
+import type { AnalysisResponse } from './types/analysis'
 
 const persistedSettings = loadModelSettings()
 const view = ref<'upload' | 'settings' | 'history'>('upload')
 const selectedFile = ref<File | null>(null)
 const resume = ref<ResumeDocument | null>(null)
+const analysis = ref<AnalysisResponse | null>(null)
 const history = ref<ResumeDocument[]>([])
 const selectedHistory = ref<ResumeDocument | null>(null)
 const uploading = ref(false)
+const analyzing = ref(false)
 const historyLoading = ref(false)
 const errorMessage = ref('')
 const settingsMessage = ref('')
+const position = ref('')
+const jobDescription = ref('')
 const modelSettings = ref<ModelSettings>({
   ...persistedSettings,
   apiKey: '',
@@ -142,11 +191,38 @@ async function submitResume() {
   errorMessage.value = ''
   try {
     resume.value = await uploadResume(selectedFile.value)
+    analysis.value = null
     history.value = [resume.value, ...history.value.filter((item) => item.id !== resume.value?.id)]
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '上传失败，请稍后重试。'
   } finally {
     uploading.value = false
+  }
+}
+
+async function submitAnalysis() {
+  if (!resume.value) return
+  if (!position.value.trim()) {
+    errorMessage.value = '请先填写目标岗位。'
+    return
+  }
+  analyzing.value = true
+  errorMessage.value = ''
+  try {
+    analysis.value = await createAnalysis({
+      resumeId: resume.value.id,
+      position: position.value,
+      jobDescription: jobDescription.value,
+      modelSettings: {
+        apiKey: modelSettings.value.apiKey,
+        baseUrl: modelSettings.value.baseUrl,
+        model: modelSettings.value.model,
+      },
+    })
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '分析失败，请稍后重试。'
+  } finally {
+    analyzing.value = false
   }
 }
 

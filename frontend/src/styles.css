@@ -208,6 +208,17 @@ input {
   font: inherit;
 }
 
+textarea {
+  min-height: 130px;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+  color: #172033;
+  font: inherit;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -239,6 +250,81 @@ input {
   color: #047857 !important;
 }
 
+.analysis-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.analysis-form {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.report {
+  display: grid;
+  gap: 18px;
+}
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.scoreboard strong {
+  font-size: 56px;
+  color: #0f766e;
+}
+
+.scoreboard > span {
+  grid-column: 2;
+  color: #d97706;
+  font-size: 18px;
+}
+
+.dimension-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dimension {
+  padding: 14px;
+  border: 1px solid #d9e2f2;
+  border-radius: 8px;
+}
+
+.dimension div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.dimension span {
+  color: #0f766e;
+  font-weight: 800;
+}
+
+.impressions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.impressions span {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-weight: 700;
+}
+
 pre {
   max-height: 360px;
   margin: 0;
@@ -262,7 +348,9 @@ pre {
   .upload-panel,
   .result-panel,
   .history-panel,
-  .settings-panel {
+  .settings-panel,
+  .analysis-panel,
+  .dimension-grid {
     grid-template-columns: 1fr;
   }
 
