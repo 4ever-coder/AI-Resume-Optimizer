@@ -1,5 +1,6 @@
 package com.qianyi.resumeoptimizer.common;
 
+import com.qianyi.resumeoptimizer.analysis.AnalysisException;
 import com.qianyi.resumeoptimizer.resume.ResumeParseException;
 import com.qianyi.resumeoptimizer.resume.ResumeNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResumeNotFoundException.class)
     public ResponseEntity<ApiError> handleResumeNotFound(ResumeNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiError.of(exception.getMessage(), "RESUME_NOT_FOUND"));
+    }
+
+    @ExceptionHandler(AnalysisException.class)
+    public ResponseEntity<ApiError> handleAnalysis(AnalysisException exception) {
+        return ResponseEntity.badRequest().body(ApiError.of(exception.getMessage(), exception.code()));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
