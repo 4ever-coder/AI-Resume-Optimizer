@@ -77,6 +77,38 @@
               {{ impression.label }}：{{ impression.description }}
             </span>
           </div>
+
+          <section class="suggestion-section">
+            <h3>优化建议</h3>
+            <div class="suggestion-grid">
+              <article v-for="suggestion in analysis.report.suggestions" :key="suggestion.title" class="suggestion-card">
+                <span>{{ suggestionTypeLabel[suggestion.type] }}</span>
+                <h4>{{ suggestion.title }}</h4>
+                <p>{{ suggestion.reason }}</p>
+                <blockquote v-if="suggestion.originalText">{{ suggestion.originalText }}</blockquote>
+                <strong>{{ suggestion.improvedText }}</strong>
+                <small>{{ suggestion.actionHint }}</small>
+              </article>
+            </div>
+          </section>
+
+          <section v-if="analysis.report.rewriteSamples.length" class="rewrite-section">
+            <h3>改写样例</h3>
+            <article v-for="sample in analysis.report.rewriteSamples" :key="sample.afterText" class="rewrite-card">
+              <p>{{ sample.beforeText }}</p>
+              <strong>{{ sample.afterText }}</strong>
+              <small>{{ sample.note }}</small>
+            </article>
+          </section>
+
+          <section v-if="analysis.report.riskWarnings.length" class="risk-section">
+            <h3>风险提示</h3>
+            <article v-for="risk in analysis.report.riskWarnings" :key="risk.message" class="risk-card">
+              <span>{{ risk.severity }}</span>
+              <strong>{{ risk.message }}</strong>
+              <p>{{ risk.action }}</p>
+            </article>
+          </section>
         </article>
       </section>
 
@@ -176,6 +208,13 @@ const modelSettings = ref<ModelSettings>({
   ...persistedSettings,
   apiKey: '',
 })
+const suggestionTypeLabel = {
+  TRIM: '精简',
+  EXPAND: '扩展',
+  SUPPLEMENT: '补充',
+  REWRITE: '重写',
+  AI_FUSION: 'AI 融合',
+}
 
 const selectedFileName = computed(() => selectedFile.value?.name ?? '选择 PDF、DOCX 或 TXT 文件')
 
