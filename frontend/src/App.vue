@@ -9,6 +9,7 @@
 
       <nav class="tabs" aria-label="功能视图">
         <button :class="{ active: view === 'upload' }" @click="view = 'upload'">上传</button>
+        <button :class="{ active: view === 'settings' }" @click="view = 'settings'">模型</button>
         <button :class="{ active: view === 'history' }" @click="openHistory">历史</button>
       </nav>
 
@@ -66,6 +67,41 @@
           <p v-else>选择一条记录查看解析文本。</p>
         </div>
       </section>
+
+      <section v-if="view === 'settings'" class="panel settings-panel">
+        <div class="settings-copy">
+          <p class="eyebrow">模型连接</p>
+          <h2>自助填写 API Key</h2>
+          <p>API Key 只保存在当前页面内存中，刷新页面后会清空；Base URL 和模型名会保存到浏览器，便于下次使用。</p>
+        </div>
+
+        <label>
+          <span>API Key</span>
+          <input v-model="modelSettings.apiKey" type="password" autocomplete="off" placeholder="sk-..." />
+        </label>
+
+        <label>
+          <span>Base URL</span>
+          <input v-model="modelSettings.baseUrl" type="url" placeholder="https://api.openai.com/v1" />
+        </label>
+
+        <label>
+          <span>模型名</span>
+          <input v-model="modelSettings.model" type="text" placeholder="gpt-4.1-mini" />
+        </label>
+
+        <div class="segmented" aria-label="模型模式">
+          <button :class="{ active: modelSettings.qualityMode === 'balanced' }" @click="applyMode('balanced')">均衡</button>
+          <button :class="{ active: modelSettings.qualityMode === 'quality' }" @click="applyMode('quality')">高质量</button>
+          <button :class="{ active: modelSettings.qualityMode === 'compatible' }" @click="applyMode('compatible')">兼容</button>
+        </div>
+
+        <div class="settings-actions">
+          <button @click="persistModelSettings">保存模型设置</button>
+          <button class="secondary" @click="clearSettings">清空设置</button>
+        </div>
+        <p v-if="settingsMessage" class="success">{{ settingsMessage }}</p>
+      </section>
     </section>
   </main>
 </template>
@@ -73,9 +109,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { getResume, listResumes, uploadResume } from './api/resumes'
+import { clearModelSettings, loadModelSettings, saveModelSettings } from './storage/modelSettings'
+import type { ModelSettings } from './types/modelSettings'
 import type { ResumeDocument } from './types/resume'
 
-const view = ref<'upload' | 'history'>('upload')
+const persistedSettings = loadModelSettings()
+const view = ref<'upload' | 'settings' | 'history'>('upload')
 const selectedFile = ref<File | null>(null)
 const resume = ref<ResumeDocument | null>(null)
 const history = ref<ResumeDocument[]>([])
@@ -83,6 +122,11 @@ const selectedHistory = ref<ResumeDocument | null>(null)
 const uploading = ref(false)
 const historyLoading = ref(false)
 const errorMessage = ref('')
+const settingsMessage = ref('')
+const modelSettings = ref<ModelSettings>({
+  ...persistedSettings,
+  apiKey: '',
+})
 
 const selectedFileName = computed(() => selectedFile.value?.name ?? '选择 PDF、DOCX 或 TXT 文件')
 
@@ -135,5 +179,26 @@ function formatTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function applyMode(mode: ModelSettings['qualityMode']) {
+  modelSettings.value.qualityMode = mode
+  if (mode === 'balanced') modelSettings.value.model = 'gpt-4.1-mini'
+  if (mode === 'quality') modelSettings.value.model = 'gpt-4.1'
+}
+
+function persistModelSettings() {
+  saveModelSettings({
+    baseUrl: modelSettings.value.baseUrl,
+    model: modelSettings.value.model,
+    qualityMode: modelSettings.value.qualityMode,
+  })
+  settingsMessage.value = '模型设置已保存，API Key 会在刷新页面后清空。'
+}
+
+function clearSettings() {
+  clearModelSettings()
+  modelSettings.value = { ...loadModelSettings(), apiKey: '' }
+  settingsMessage.value = '模型设置已清空。'
 }
 </script>

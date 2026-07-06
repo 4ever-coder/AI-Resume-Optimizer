@@ -180,6 +180,65 @@ button:disabled {
   min-width: 0;
 }
 
+.settings-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(280px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.settings-copy {
+  grid-row: span 5;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: #334155;
+  font-weight: 700;
+}
+
+input {
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #172033;
+  font: inherit;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.segmented button,
+.secondary {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.segmented button.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-actions button {
+  padding: 0 16px;
+}
+
+.success {
+  color: #047857 !important;
+}
+
 pre {
   max-height: 360px;
   margin: 0;
@@ -202,7 +261,12 @@ pre {
 
   .upload-panel,
   .result-panel,
-  .history-panel {
+  .history-panel,
+  .settings-panel {
     grid-template-columns: 1fr;
+  }
+
+  .settings-copy {
+    grid-row: auto;
   }
 }
