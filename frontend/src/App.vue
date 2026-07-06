@@ -52,6 +52,13 @@
         </div>
 
         <article v-if="analysis" class="report">
+          <div class="report-actions">
+            <button @click="copySuggestions">复制建议</button>
+            <button class="secondary" @click="downloadReport">下载报告</button>
+            <button class="secondary" @click="copyShareSummary">复制分享摘要</button>
+          </div>
+          <p v-if="exportMessage" class="success">{{ exportMessage }}</p>
+
           <div class="scoreboard">
             <div>
               <p class="eyebrow">报告</p>
@@ -202,6 +209,7 @@ const analyzing = ref(false)
 const historyLoading = ref(false)
 const errorMessage = ref('')
 const settingsMessage = ref('')
+const exportMessage = ref('')
 const position = ref('')
 const jobDescription = ref('')
 const modelSettings = ref<ModelSettings>({
@@ -315,5 +323,39 @@ function clearSettings() {
   clearModelSettings()
   modelSettings.value = { ...loadModelSettings(), apiKey: '' }
   settingsMessage.value = '模型设置已清空。'
+}
+
+async function copySuggestions() {
+  if (!analysis.value) return
+  const text = analysis.value.report.suggestions
+    .map((item, index) => `${index + 1}. 【${suggestionTypeLabel[item.type]}】${item.title}\n${item.improvedText}\n${item.actionHint}`)
+    .join('\n\n')
+  await navigator.clipboard.writeText(text)
+  exportMessage.value = '优化建议已复制。'
+}
+
+function downloadReport() {
+  if (!analysis.value) return
+  const blob = new Blob([JSON.stringify(analysis.value, null, 2)], { type: 'application/json;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `resume-report-${analysis.value.resumeId}.json`
+  link.click()
+  URL.revokeObjectURL(url)
+  exportMessage.value = '报告 JSON 已下载。'
+}
+
+async function copyShareSummary() {
+  if (!analysis.value) return
+  const report = analysis.value.report
+  const text = [
+    `简历优化报告：${report.position}`,
+    `总分：${report.summaryScore} / 星级：${report.starLevel}`,
+    `整体评价：${report.overallComment}`,
+    `重点建议：${report.suggestions.slice(0, 3).map((item) => item.title).join('、')}`,
+  ].join('\n')
+  await navigator.clipboard.writeText(text)
+  exportMessage.value = '分享摘要已复制。'
 }
 </script>

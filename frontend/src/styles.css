@@ -267,6 +267,16 @@ textarea {
   gap: 18px;
 }
 
+.report-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.report-actions button {
+  padding: 0 16px;
+}
+
 .scoreboard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
