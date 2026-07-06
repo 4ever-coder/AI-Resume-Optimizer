@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ai-resume-optimizer
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 8MB
+
+app:
+  storage:
+    upload-dir: uploads
+    history-file: data/reports.json
+  analysis:
+    default-base-url: https://api.openai.com/v1
+    default-model: gpt-4.1-mini
+    max-resume-chars: 30000
+
