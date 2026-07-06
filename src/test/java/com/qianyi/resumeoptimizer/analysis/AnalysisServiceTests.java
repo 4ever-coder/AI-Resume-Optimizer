@@ -14,6 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -90,7 +91,9 @@ class AnalysisServiceTests {
                 (settings, prompt) -> modelOutput,
                 objectMapper,
                 new ReportValidationService(Validation.buildDefaultValidatorFactory().getValidator()),
-                new ReportFallbackFactory()
+                new ReportFallbackFactory(),
+                new AnalysisProperties("https://api.openai.com/v1", "gpt-4.1-mini", 30000, 12000, uploadDir.resolve("usage.jsonl").toString()),
+                new UsageLogService(new AnalysisProperties("https://api.openai.com/v1", "gpt-4.1-mini", 30000, 12000, uploadDir.resolve("usage.jsonl").toString()), objectMapper)
         );
     }
 
@@ -113,5 +116,45 @@ class AnalysisServiceTests {
                 "项目经历\n负责 Java Spring Boot 服务开发并优化接口性能".getBytes(StandardCharsets.UTF_8)
         )).id();
     }
-}
 
+    @Test
+    void rejectsInvalidBaseUrlProtocol() {
+        assertThatThrownBy(() -> service("{}").analyze(new AnalysisRequest(
+                "resume-id",
+                "Java 后端工程师",
+                "",
+                new ModelConnectionSettings("sk-test", "file:///tmp/model", "gpt-test")
+        ))).isInstanceOf(AnalysisException.class)
+                .hasMessageContaining("Base URL");
+    }
+
+    @Test
+    void recordsUsageWithoutApiKey() throws Exception {
+        AnalysisService service = service("""
+                {
+                  "summaryScore": 88,
+                  "starLevel": 4,
+                  "position": "Java 后端工程师",
+                  "overallComment": "项目经历扎实。",
+                  "dimensions": [{"key":"POSITION_MATCH","label":"岗位匹配度","score":86,"comment":"技能匹配。"}],
+                  "impressions": [{"label":"基础扎实","description":"后端项目经历完整。"}],
+                  "suggestions": [{"type":"EXPAND","title":"补充指标","reason":"缺少量化成果","originalText":"负责接口开发","improvedText":"负责接口开发并优化响应时间","actionHint":"补充响应时间"}],
+                  "rewriteSamples": [],
+                  "riskWarnings": [],
+                  "status": "OK",
+                  "errorMessage": null
+                }
+                """);
+        String resumeId = uploadResume();
+
+        service.analyze(new AnalysisRequest(
+                resumeId,
+                "Java 后端工程师",
+                "熟悉 Spring Boot",
+                new ModelConnectionSettings("sk-secret", "https://api.example.com/v1", "gpt-test")
+        ));
+
+        String usage = Files.readString(uploadDir.resolve("usage.jsonl"));
+        assertThat(usage).contains("gpt-test", "SUCCESS").doesNotContain("sk-secret");
+    }
+}

@@ -22,6 +22,8 @@ public class AnalysisService {
     private final ObjectMapper objectMapper;
     private final ReportValidationService validationService;
     private final ReportFallbackFactory fallbackFactory;
+    private final AnalysisProperties properties;
+    private final UsageLogService usageLogService;
 
     public AnalysisService(
             ResumeUploadService resumeUploadService,
@@ -29,7 +31,9 @@ public class AnalysisService {
             ChatModelClient chatModelClient,
             ObjectMapper objectMapper,
             ReportValidationService validationService,
-            ReportFallbackFactory fallbackFactory
+            ReportFallbackFactory fallbackFactory,
+            AnalysisProperties properties,
+            UsageLogService usageLogService
     ) {
         this.resumeUploadService = resumeUploadService;
         this.promptBuilder = promptBuilder;
@@ -37,15 +41,33 @@ public class AnalysisService {
         this.objectMapper = objectMapper;
         this.validationService = validationService;
         this.fallbackFactory = fallbackFactory;
+        this.properties = properties;
+        this.usageLogService = usageLogService;
     }
 
     public AnalysisResponse analyze(AnalysisRequest request) {
         validateModelSettings(request.modelSettings());
         try {
             ResumeDocument resume = resumeUploadService.getById(request.resumeId());
-            AnalysisPrompt prompt = promptBuilder.build(resume.parsedText(), request.position(), request.jobDescription());
-            String modelOutput = chatModelClient.complete(request.modelSettings(), prompt);
+            String resumeText = limitText(resume.parsedText(), properties.maxResumeChars(), "简历文本过长，已截断到限制范围。");
+            String jobDescription = limitText(request.jobDescription(), properties.maxJobDescriptionChars(), "岗位 JD 过长，已截断到限制范围。");
+            AnalysisPrompt prompt = promptBuilder.build(resumeText, request.position(), jobDescription);
+            String modelOutput;
+            try {
+                modelOutput = chatModelClient.complete(request.modelSettings(), prompt);
+            } catch (AnalysisException exception) {
+                usageLogService.record(usageLogService.failed(resume.id(), request.modelSettings().model(), resumeText.length(), jobDescription.length(), prompt.systemPrompt().length() + prompt.userPrompt().length()));
+                throw exception;
+            }
             AnalysisReport report = parseAndValidate(modelOutput, request.position());
+            usageLogService.record(usageLogService.success(
+                    resume.id(),
+                    request.modelSettings().model(),
+                    resumeText.length(),
+                    jobDescription.length(),
+                    prompt.systemPrompt().length() + prompt.userPrompt().length(),
+                    modelOutput.length()
+            ));
             return new AnalysisResponse(resume.id(), request.position(), request.modelSettings().model(), report, Instant.now());
         } catch (IOException exception) {
             throw new AnalysisException("读取简历历史记录失败，请重新上传简历。", "RESUME_READ_FAILED");
@@ -71,6 +93,10 @@ public class AnalysisService {
         if (settings.model() == null || settings.model().isBlank()) {
             throw new AnalysisException("请填写模型名称。", "MISSING_MODEL");
         }
+        String baseUrl = settings.baseUrl().trim();
+        if (!baseUrl.startsWith("https://") && !baseUrl.startsWith("http://")) {
+            throw new AnalysisException("Base URL 必须以 http:// 或 https:// 开头。", "INVALID_BASE_URL");
+        }
     }
 
     private String stripJsonFence(String content) {
@@ -80,5 +106,14 @@ public class AnalysisService {
         }
         return text;
     }
-}
 
+    private String limitText(String text, int maxChars, String message) {
+        if (text == null) {
+            return "";
+        }
+        if (text.length() <= maxChars) {
+            return text;
+        }
+        return text.substring(0, maxChars) + "\n\n" + message;
+    }
+}
