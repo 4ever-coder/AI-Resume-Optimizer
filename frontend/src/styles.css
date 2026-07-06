@@ -47,33 +47,81 @@ h1 {
   line-height: 1.7;
 }
 
-.flow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.step {
-  min-height: 176px;
+.panel {
+  margin-bottom: 18px;
   padding: 24px;
   border: 1px solid #d9e2f2;
   border-radius: 8px;
   background: #ffffff;
 }
 
-.step span {
-  color: #0f766e;
-  font-weight: 800;
+.upload-panel {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(260px, 420px) auto;
+  gap: 16px;
+  align-items: center;
 }
 
-.step h2 {
-  margin: 20px 0 10px;
+.panel h2 {
+  margin: 0 0 8px;
   font-size: 20px;
 }
 
-.step p {
+.panel p {
   margin: 0;
   color: #5a6685;
+  line-height: 1.65;
+}
+
+.upload-box {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px dashed #94a3b8;
+  border-radius: 8px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.upload-box input {
+  display: none;
+}
+
+button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.error {
+  grid-column: 1 / -1;
+  color: #b91c1c !important;
+}
+
+.result-panel {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 20px;
+}
+
+pre {
+  max-height: 360px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #1f2937;
+  font-family: "SFMono-Regular", Consolas, monospace;
   line-height: 1.65;
 }
 
@@ -86,8 +134,8 @@ h1 {
     font-size: 34px;
   }
 
-  .flow {
+  .upload-panel,
+  .result-panel {
     grid-template-columns: 1fr;
   }
 }
-
