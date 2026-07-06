@@ -17,3 +17,18 @@ export async function uploadResume(file: File): Promise<ResumeDocument> {
   return response.json()
 }
 
+export async function listResumes(): Promise<ResumeDocument[]> {
+  const response = await fetch('/api/resumes')
+  if (!response.ok) {
+    throw new Error('历史记录加载失败，请稍后重试。')
+  }
+  return response.json()
+}
+
+export async function getResume(id: string): Promise<ResumeDocument> {
+  const response = await fetch(`/api/resumes/${id}`)
+  if (!response.ok) {
+    throw new Error('历史详情加载失败，请稍后重试。')
+  }
+  return response.json()
+}

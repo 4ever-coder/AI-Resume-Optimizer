@@ -51,6 +51,28 @@ class ResumeUploadServiceTests {
                 .hasMessageContaining("仅支持");
     }
 
+    @Test
+    void listsHistoryAndLoadsDetail() throws Exception {
+        ResumeUploadService service = service();
+        ResumeDocument first = service.upload(new MockMultipartFile(
+                "file",
+                "first.txt",
+                "text/plain",
+                "项目经历\n负责 Java 服务开发并沉淀接口规范".getBytes(StandardCharsets.UTF_8)
+        ));
+        ResumeDocument second = service.upload(new MockMultipartFile(
+                "file",
+                "second.txt",
+                "text/plain",
+                "教育经历\n计算机科学与技术 本科 参与多个课程项目".getBytes(StandardCharsets.UTF_8)
+        ));
+
+        assertThat(service.listHistory())
+                .extracting(ResumeDocument::id)
+                .contains(second.id(), first.id());
+        assertThat(service.getById(first.id()).parsedText()).contains("接口规范");
+    }
+
     private ResumeUploadService service() {
         ResumeProperties properties = new ResumeProperties(8 * 1024 * 1024, 20, 20);
         ResumeParserService parserService = new ResumeParserService(properties, new TextCleaner());

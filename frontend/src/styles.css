@@ -47,6 +47,23 @@ h1 {
   line-height: 1.7;
 }
 
+.tabs {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.tabs button {
+  min-width: 82px;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.tabs button.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
 .panel {
   margin-bottom: 18px;
   padding: 24px;
@@ -114,6 +131,55 @@ button:disabled {
   gap: 20px;
 }
 
+.history-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-head button {
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.history-item {
+  display: grid;
+  gap: 6px;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid #d9e2f2;
+  background: #ffffff;
+  color: #172033;
+  text-align: left;
+}
+
+.history-item.active {
+  border-color: #0f766e;
+  background: #ecfdf5;
+}
+
+.history-item span {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.history-detail {
+  min-width: 0;
+}
+
 pre {
   max-height: 360px;
   margin: 0;
@@ -135,7 +201,8 @@ pre {
   }
 
   .upload-panel,
-  .result-panel {
+  .result-panel,
+  .history-panel {
     grid-template-columns: 1fr;
   }
 }

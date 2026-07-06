@@ -9,9 +9,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Locale;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 public class ResumeUploadService {
@@ -66,6 +69,27 @@ public class ResumeUploadService {
         return document;
     }
 
+    public List<ResumeDocument> listHistory() throws IOException {
+        if (!Files.exists(uploadDir)) {
+            return List.of();
+        }
+        try (Stream<Path> files = Files.list(uploadDir)) {
+            return files
+                    .filter(path -> path.getFileName().toString().endsWith(".json"))
+                    .map(this::readDocumentUnchecked)
+                    .sorted(Comparator.comparing(ResumeDocument::uploadedAt).reversed())
+                    .toList();
+        }
+    }
+
+    public ResumeDocument getById(String id) throws IOException {
+        Path metadata = uploadDir.resolve(id + ".json").normalize();
+        if (!metadata.startsWith(uploadDir.normalize()) || !Files.exists(metadata)) {
+            throw new ResumeNotFoundException("没有找到这条历史记录。");
+        }
+        return objectMapper.readValue(metadata.toFile(), ResumeDocument.class);
+    }
+
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new ResumeParseException("请选择要上传的简历文件。", "EMPTY_FILE");
@@ -89,5 +113,12 @@ public class ResumeUploadService {
     private String safeOriginalFilename(String filename) {
         return filename == null || filename.isBlank() ? "unknown" : Path.of(filename).getFileName().toString();
     }
-}
 
+    private ResumeDocument readDocumentUnchecked(Path path) {
+        try {
+            return objectMapper.readValue(path.toFile(), ResumeDocument.class);
+        } catch (IOException exception) {
+            throw new ResumeParseException("历史记录读取失败，请检查本地数据文件。", "HISTORY_READ_FAILED");
+        }
+    }
+}
